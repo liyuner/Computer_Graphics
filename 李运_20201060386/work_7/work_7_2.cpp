@@ -1,72 +1,93 @@
 #include <windows.h>
 #include <GL/glut.h>
 
-GLuint lineList; //指定显示列表ID
-void Initial()
+GLsizei winWidth=400,winHeight=300;
+GLint endPtCtr=0;
+
+class scrPt {
+public:
+    GLint x,y;
+};
+
+void init(void)
 {
-    glClearColor(1.0f, 1.0f, 1.0f, 0.0f);//设置窗口背景颜色（清空当前颜色缓冲）
-    glLineWidth(12.0f);                 //设置线的宽度
-    glColor4f (0.0, 0.6, 1.0, 1.0);     //设置为颜色
-    lineList = glGenLists(1);          //创建显示列表ID
-    glNewList(lineList, GL_COMPILE);  //定义显示列表
-    glBegin(GL_LINE_LOOP);        //绘制线段
-    glVertex2f(1.0f, 1.0f);     //第一个点
-    glVertex2f(4.0f, 2.0f);     //第二个点
-    glVertex2f(2.0f, 5.0f);     //第三个点
-    glEnd();                      //绘制结束
-    glEndList();                      //显示列表结束
+    glClearColor(0.0,0.0,1.0,1.0);
+
+    glMatrixMode(GL_PROJECTION);
+    gluOrtho2D(0.0,200.0,0.0,150.0);
 }
 
-void ChangeSize(GLsizei w, GLsizei h) //typedef int GLsizei
+void displayFcn(void)
 {
-    if(h == 0)
-        h = 1;
-    glViewport(0, 0, w, h);          //指定窗口位置
-    glMatrixMode(GL_PROJECTION);     //接下来进行投影操作
-    glLoadIdentity();                //重置当前指定的矩阵为单位矩阵.
-    if(w<=h)
-        gluOrtho2D(0.0, 5.0, 0.0, 6.0*(GLfloat)h/(GLfloat)w);//更改模型坐标范围
+    glClear(GL_COLOR_BUFFER_BIT);
+}
+
+void winReshapeFcn(GLint newWidth,GLint newHeight)
+{
+    glViewport(0,0,newWidth,newHeight);
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    gluOrtho2D(0.0,GLdouble(newWidth),0.0,GLdouble(newHeight));
+
+    winWidth=newWidth;
+    winHeight=newHeight;
+}
+
+void drawLineSegment(scrPt endPt1,scrPt endPt2)
+{
+    glBegin(GL_LINES);
+         glVertex2i(endPt1.x,endPt1.y);
+         glVertex2i(endPt2.x,endPt2.y);
+    glEnd();
+}
+
+void polyline(GLint button,GLint action,GLint xMouse,GLint yMouse)
+{
+    static scrPt endPt1,endPt2;
+
+    if (endPtCtr==0)
+    {
+        if(button==GLUT_LEFT_BUTTON && action==GLUT_DOWN)
+        {
+            endPt1.x=xMouse;
+            endPt1.y=winHeight-yMouse;
+            endPtCtr=1;
+        }
+        else
+            if(button==GLUT_RIGHT_BUTTON)
+                  exit(0);
+    }
     else
-        gluOrtho2D(0.0, 5.0*(GLfloat)w/(GLfloat)h, 0.0, 6.0);//更改模型坐标范围
-    glMatrixMode(GL_MODELVIEW);      //模型视景的操作
-    glLoadIdentity();              //重置当前指定的矩阵为单位矩阵
+    {
+        if(button==GLUT_LEFT_BUTTON && action==GLUT_DOWN)
+        {
+            endPt2.x=xMouse;
+            endPt2.y=winHeight-yMouse;
+            drawLineSegment(endPt1,endPt2);
+
+            endPt1=endPt2;
+        }
+        else
+            if(button==GLUT_RIGHT_BUTTON)
+                  exit(0);
+    }
+
+    glFlush();
 }
 
-void Displayt(void)
+int main(int argc,char** argv)
 {
-    glClear(GL_COLOR_BUFFER_BIT);//用当前背景色填充窗口
-    glCallList(lineList);        //函数执行显示列表
-    glFlush();                  //强制刷新缓冲，保证绘图命令将被执行
-}
+    glutInit(&argc,argv);
+    glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB);
+    glutInitWindowPosition(100,100);
+    glutInitWindowSize(winWidth,winHeight);
+    glutCreateWindow("Draw Interaction Polyline");
 
-void Displayw(void)
-{
-    glClear(GL_COLOR_BUFFER_BIT);  //用当前背景色填充窗口
-    glEnable(GL_LINE_SMOOTH);      //使用反走样
-    glEnable (GL_BLEND);             //启用混合函数
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);  //指定混合函数
-    glCallList(lineList); //函数执行显示列表
-    glFlush();            //强制刷新缓冲，保证绘图命令将被执行
+    init();
+    glutDisplayFunc(displayFcn);
+    glutReshapeFunc(winReshapeFcn);
+    glutMouseFunc(polyline);
 
-}
-
-int main(void)
-{
-    glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB); //使用双缓存及RGB模型
-    glutInitWindowSize(300, 300);                //窗口大小
-    glutCreateWindow("原始图形");                //窗口名称
-    glutDisplayFunc(Displayt);                   //执行函数
-    glutReshapeFunc(ChangeSize);
-    Initial();
-
-    glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB); //使用双缓存及RGB模型
-    glutInitWindowPosition(300, 300);
-    glutInitWindowSize(300, 300);
-    glutCreateWindow("反走样图形");
-    glutDisplayFunc(Displayw);
-    glutReshapeFunc(ChangeSize);
-    Initial();
     glutMainLoop();
-
     return 0;
 }
