@@ -107,7 +107,7 @@ int main(int argc,char** argv)
     glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB);
     glutInitWindowPosition(100,100);
     glutInitWindowSize(winWidth,winHeight);
-    glutCreateWindow("Wire-Frame Polyhedron");
+    glutCreateWindow("Bezier Curve");
 
     init();
     glutDisplayFunc(displayFcn);
